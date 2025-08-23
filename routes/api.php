@@ -1,6 +1,6 @@
 <?php
 
-
+use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\PacientesController;
 use App\Http\Controllers\ConsultoriosController;
 use App\Http\Controllers\EspecialidadesController;
@@ -59,3 +59,7 @@ Route::post('CrearCitas', [CitasController::class, 'store' ]);
 Route::get('Citas/{id}', [CitasController::class, 'show' ]);
 Route::put('actualizarCitas/{id}', [CitasController::class, 'update' ]);
 Route::delete('eliminarCitas/{id}', [CitasController::class, 'destroy' ]);
+
+
+
+Route::get('/usuarios', [UsuarioController::class, 'listar']);

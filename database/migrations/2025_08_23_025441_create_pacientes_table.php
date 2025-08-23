@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('Telefono');
             $table->string('Email')->unique();
             $table->date('Fecha_nacimiento');
-            $table->string('Genero', ['M' , 'F']);
+            $table->enum('Genero', ['M' , 'F']);
             $table->string('RH');
             $table->string('Nacionalidad');
             $table->string('Password');

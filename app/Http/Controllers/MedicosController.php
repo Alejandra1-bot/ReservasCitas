@@ -23,8 +23,8 @@ class MedicosController extends Controller
         'Telefono'=> 'required|string',
         'Email'=> 'required|string',
         'Password'=> 'required|string',
-        'idConsultorio'=>'required|string',
-        'idEspecialidad'=>'required|string'
+        'idConsultorio'=>'required|integer',
+        'idEspecialidad'=>'required|integer'
 
         ]);
 
