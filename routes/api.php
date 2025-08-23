@@ -10,6 +10,8 @@ use App\Http\Controllers\CitasController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB;
+
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -60,6 +62,34 @@ Route::get('Citas/{id}', [CitasController::class, 'show' ]);
 Route::put('actualizarCitas/{id}', [CitasController::class, 'update' ]);
 Route::delete('eliminarCitas/{id}', [CitasController::class, 'destroy' ]);
 
+// temporales 
+//Contar pacientes por género
+Route::get('/sql/pacientes/contar-genero', function () {
+    $rows = DB::select("SELECT Genero, COUNT(*) as total FROM pacientes GROUP BY Genero");
+    return response()->json($rows);
+});
+
+//2. Pacientes ordenados por fecha de nacimiento (mayores primero)
+Route::get('/sql/pacientes/ordenados/edad', function () {
+    $rows = DB::select("SELECT * FROM pacientes ORDER BY Fecha_nacimiento ASC");
+    return response()->json($rows);
+});
 
 
-Route::get('/usuarios', [UsuarioController::class, 'listar']);
+// 3. Buscar pacientes por nacionalidad
+Route::get('/sql/pacientes/nacionalidad/{nac}', function ($nac) {
+    $rows = DB::select("SELECT * FROM pacientes WHERE Nacionalidad = ?", [$nac]);
+    return response()->json($rows);
+});
+
+// 6. Buscar por email (like, coincidencias parciales)
+Route::get('/sql/pacientes/email/{texto}', function ($texto) {
+    $rows = DB::select("SELECT * FROM pacientes WHERE Email LIKE ?", ["%$texto%"]);
+    return response()->json($rows);
+});
+
+// 10. Obtener solo nombre y apellido (más ligero)
+Route::get('/sql/pacientes/nombres', function () {
+    $rows = DB::select("SELECT Nombre, Apellido FROM pacientes");
+    return response()->json($rows);
+});
