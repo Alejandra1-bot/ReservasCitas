@@ -61,7 +61,7 @@ class CitasController extends Controller
           'Estado'=> 'string',
           'idPaciente'=>'integer',
           'idMedico'=>'integer',
-         'idRecepcionista'=>'integer',
+         'idResepcionista'=>'integer',
         ]);
 
           if ($validator-> fails()) {

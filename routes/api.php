@@ -32,10 +32,10 @@ use Illuminate\Support\Facades\DB;
             Route::post('CrearConsultorios', [ConsultoriosController::class, 'store' ]);
             Route::put('actualizarConsultorios/{id}', [ConsultoriosController::class, 'update' ]);
             Route::delete('eliminarConsultorios/{id}', [ConsultoriosController::class, 'destroy' ]);
-            Route::post('CrearEspecialidades', [EspecialidadesController::class, 'store' ]);
+            // Route::post('CrearEspecialidades', [EspecialidadesController::class, 'store' ]);
             Route::put('actualizarEspecialidades/{id}', [EspecialidadesController::class, 'update' ]);
             Route::delete('eliminarEspecialidades/{id}', [EspecialidadesController::class, 'destroy' ]);
-            Route::post('CrearMedicos', [MedicosController::class, 'store' ]);
+            // Route::post('CrearMedicos', [MedicosController::class, 'store' ]);
             Route::put('actualizarMedicos/{id}', [MedicosController::class, 'update' ]);
             Route::delete('eliminarMedicos/{id}', [MedicosController::class, 'destroy' ]);
 
@@ -64,7 +64,7 @@ Route::get('listarConsultorios', [ConsultoriosController::class, 'index' ]);
 
 // Rutas para especialidades 
 Route::get('listarEspecialidades', [EspecialidadesController::class, 'index' ]);
-// Route::post('CrearEspecialidades', [EspecialidadesController::class, 'store' ]);
+Route::post('CrearEspecialidades', [EspecialidadesController::class, 'store' ]);
 // Route::get('Especialidades/{id}', [EspecialidadesController::class, 'show' ]);
 // Route::put('actualizarEspecialidades/{id}', [EspecialidadesController::class, 'update' ]);
 // Route::delete('eliminarEspecialidades/{id}', [EspecialidadesController::class, 'destroy' ]);
@@ -79,7 +79,7 @@ Route::delete('eliminarResepcionistas/{id}', [ResepcionistasController::class, '
 
 // Rutas para medicos 
 Route::get('listarMedicos', [MedicosController::class, 'index' ]);
-// Route::post('CrearMedicos', [MedicosController::class, 'store' ]);
+Route::post('CrearMedicos', [MedicosController::class, 'store' ]);
 // Route::get('Medicos/{id}', [MedicosController::class, 'show' ]);
 // Route::put('actualizarMedicos/{id}', [MedicosController::class, 'update' ]);
 // Route::delete('eliminarMedicos/{id}', [MedicosController::class, 'destroy' ]);

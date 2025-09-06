@@ -82,7 +82,7 @@ class PacientesController extends Controller
    {
          $pacientes = Pacientes::find($id);
           if (!$pacientes) { 
-            return response->json(['menssage'=> 'Paciente no encontrado para eliminar '], 404);
+            return response()->json(['menssage'=> 'Paciente no encontrado para eliminar '], 404);
         }
           $pacientes->delete();
           return response()->json(['message' => 'Paciente eliminado con exito']); 
