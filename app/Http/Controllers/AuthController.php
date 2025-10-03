@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Pacientes;
+use App\Models\Medicos;
+use App\Models\Administrador;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
@@ -13,11 +17,20 @@ class AuthController extends Controller
     public function registrar(Request $request)
     {
         $validator = Validator::make($request->all(),[
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
-            'email_verified_at' => 'nullable|date',
-            'roles'=>'required|string|in:admin,user' // rol puede ser admin o user
+        'Nombre'=> 'required|string',
+        'Apellido'=> 'required|string',
+        'Documento'=> 'required|string',
+        'Telefono'=> 'required|string',
+        'Email' => 'required_without:email|string',
+        'Fecha_nacimiento'=> 'date',
+        'Genero'=> 'string',
+        'RH'=> 'string',
+        'Nacionalidad'=> 'string',
+        'password'=> 'required|string',
+        'roles'=> 'required|in:medico,paciente,administrador',
+        'idConsultorio' => 'required_if:roles,medico|integer',
+        'idEspecialidad' => 'required_if:roles,medico|integer',
+
         ]);
         if ($validator->fails()) {
             return response()->json([
@@ -25,34 +38,101 @@ class AuthController extends Controller
                 'errors' => $validator->errors(),
             ], 422);
         }
+        
+                // Crear User
+                $user = User::create([
+                    'name' => $request->Nombre,
+                    'email' => $request->Email,
+                    'password' => Hash::make($request->password),
+                    'rol' => 'paciente'
+                ]);
+
+                // Crear Pacientes
+                $pacientes = Pacientes::create($request->all());
+
+                        return response()->json([
+                'success' => true,
+                'message' => 'Registro exitoso'
+            ], 201);
+
+                 
+
+            
+        // Crear usuario en tabla users
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password), // hash hace que la contraseña no se vea en texto plano
-            'roles'=> $request->roles,
+            'name' => $request->Nombre,
+            'apellido' => $request->Apellido,
+            'documento' => $request->Documento,
+            'telefono' => $request->Telefono,
+            'email' => $request->Email ?? $request->email,
+            'fechaNacimiento' => $request->Fecha_nacimiento,
+            'genero' => $request->Genero,
+            'rh' => $request->RH,
+            'nacionalidad' => $request->Nacionalidad,
+            'password' => Hash::make($request->password),
+            'rol' => $request->roles,
         ]);
 
+        // Crear en tabla específica
+        if ($request->roles === 'paciente') {
+            Pacientes::create([
+                'Nombre' =>  $request->Nombre,
+                'Apellido' =>  $request->Apellido,
+                'Documento' =>  $request->Documento,
+                'Telefono' =>  $request->Telefono,
+                'Email' =>  $request->email,
+                'Fecha_nacimiento'=> $request->Fecha_nacimiento,
+                'Genero' =>  $request->Genero,
+                'RH' =>  $request->RH,
+                'Nacionalidad' =>  $request->Nacionalidad,
+                'password' => Hash::make($request->password),
+            ]);
+        } elseif ($request->roles === 'medico') {
+            Medicos::create([
+                'Nombre' => $request->Nombre,
+                'Apellido' => $request->Apellido,
+                'Documento' => $request->Documento,
+                'Telefono' => $request->Telefono,
+                'Email' => $request->Email ?? $request->email,
+                'Password' => Hash::make($request->password),
+                'idConsultorio' => $request->idConsultorio,
+                'idEspecialidad' => $request->idEspecialidad,
+            ]);
+        } elseif ($request->roles === 'administrador') {
+            Administrador::create([
+                'Nombre' => $request->Nombre,
+                'Apellido' => $request->Apellido,
+                'Documento' => $request->Documento,
+                'Telefono' => $request->Telefono,
+                'Email' =>  $request->Email ?? $request->email,
+                'Password' => Hash::make($request->password),
+            ]);
+        }
+
+    
+             
         try{
-            $token = JWTAuth::fromUser($user);  
+            $token = JWTAuth::fromUser($user);
             return response()->json([
             'success' => true,
             'user' => $user,
-            'token' => $token,      
-            ], 201);   
+            'token' => $token,
+            ], 201);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'No se pudo crear el Token JWT',
                 'error' => $e->getMessage(),
-            ], 500);  
-           
-        }  
+            ], 500);
+
+        }
     } 
 
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|string|email',
+            'Email' => 'required_without:email|string',
+            'email' => 'required_without:Email|string',
             'password' => 'required|string|min:8',
         ]);
         if ($validator->fails()) {
@@ -61,26 +141,36 @@ class AuthController extends Controller
                 'errors' => $validator->errors(),
             ], 422);
         }
-        $credentials = $request->only('email', 'password');
-        if (! $token = JWTAuth::attempt($credentials)) {
+
+        $email = $request->Email ?? $request->email;
+        $password = $request->password;
+
+        $user = User::where('email', $email)->first();
+        if ($user && Hash::check($password, $user->password)) {
+            $token = JWTAuth::customClaims(['role' => $user->rol])->fromUser($user);
             return response()->json([
-               'success' => false,
-                'message' => 'Credenciales invalidas',
-            ], 401);
-        }  
+                'success' => true,
+                'token' => $token,
+                'user' => [
+                    'id' => $user->id,
+                    'role' => $user->rol,
+                ],
+            ]);
+        }
+
         return response()->json([
-            'success' => true,
-            'token' => $token,
-        ]);     
-   }
+            'success' => false,
+            'message' => 'Credenciales inválidas',
+        ], 401);
+    }
 
     public function logout(){
         try{
-            $user = JWTAuth::user(); // validar el usuario logeado
+            $pacientes = JWTAuth::pacientes(); // validar el usuario logeado
             JWTAuth::invalidate(JWTAuth::getToken()); // invalidar el token
             return response()->json([
                 'success' => true,
-                'message' => $user->name.' ha cerrado sesion correctamente',
+                'message' => $pacientes->name.' ha cerrado sesion correctamente',
             ], 200);
         }catch(\Exception $e){
             return response()->json([
@@ -93,10 +183,61 @@ class AuthController extends Controller
 
     public function me ()
     {
-        return response()->json([
-            'success' => true,
-            'user' => JWTAuth::user(),
-        ], 200);
+        try {
+            $payload = JWTAuth::parseToken()->getPayload();
+            $userId = $payload->get('sub');
+            $user = User::find($userId);
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Usuario no encontrado',
+                ], 404);
+            }
+
+            $rol = $user->rol;
+            $data = $user->toArray();
+
+            if ($rol === 'paciente') {
+                $paciente = Pacientes::where('Email', $user->email)->first();
+                if ($paciente) {
+                    $data = array_merge($data, $paciente->toArray());
+                }
+            } elseif ($rol === 'medico') {
+                $medico = Medicos::where('Email', $user->email)->first();
+                if ($medico) {
+                    $data = array_merge($data, $medico->toArray());
+                }
+            } elseif ($rol === 'administrador') {
+                $admin = Administrador::where('Email', $user->email)->first();
+                if ($admin) {
+                    $data = array_merge($data, $admin->toArray());
+                }
+            }
+
+            // Rename fields
+            $data['nombre'] = $data['name'] ?? $data['Nombre'] ?? 'No disponible';
+            unset($data['name'], $data['Nombre']);
+            $data['fecha_nacimiento'] = $data['fechaNacimiento'] ?? $data['Fecha_nacimiento'] ?? 'No disponible';
+            unset($data['fechaNacimiento'], $data['Fecha_nacimiento']);
+
+            // Agregar citas si es paciente
+            if ($rol === 'paciente') {
+                $citas = \App\Models\Citas::all();
+                $data['citas'] = $citas;
+            }
+
+            return response()->json([
+                'success' => true,
+                'user' => $data,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token inválido',
+                'error' => $e->getMessage(),
+            ], 401);
+        }
     }
     
 

@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 use App\Models\Pacientes;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Hash;
 
 class PacientesController extends Controller
 {
@@ -15,7 +17,8 @@ class PacientesController extends Controller
     
 
    public function store(Request $request)
-   {
+          {
+
         $validator = Validator::make($request->all(),[
         'Nombre'=> 'required|string',
         'Apellido'=> 'required|string',
@@ -26,15 +29,33 @@ class PacientesController extends Controller
         'Genero'=> 'required|string',
         'RH'=> 'required|string',
         'Nacionalidad'=> 'required|string',
-        'Password'=> 'required|string',
+        'password'=> 'required|string',
         ]);
 
-        if ($validator-> fails()) {
-          return response()->json($validator->errors(), 422);
+        if ($validator->fails()) {
+           return response()->json($validator->errors(), 422);
          }
 
-        $pacientes = Pacientes::create($validator->validated());
-        return response()->json($pacientes,201);  
+         $data = $validator->validated();
+         $data['password'] = Hash::make($data['password']);
+
+         // Crear usuario en tabla users
+         $user = User::create([
+             'name' => $data['Nombre'],
+             'apellido' => $data['Apellido'],
+             'documento' => $data['Documento'],
+             'telefono' => $data['Telefono'],
+             'email' => $data['Email'],
+             'fechaNacimiento' => $data['Fecha_nacimiento'],
+             'genero' => $data['Genero'],
+             'rh' => $data['RH'],
+             'nacionalidad' => $data['Nacionalidad'],
+             'password' => $data['password'],
+             'rol' => 'paciente',
+         ]);
+
+         $pacientes = Pacientes::create($data);
+         return response()->json($pacientes,201);
 
    } 
 
@@ -67,15 +88,19 @@ class PacientesController extends Controller
         'Genero'=> 'string',
         'RH'=> 'string',
         'Nacionalidad'=> 'string',
-        'Password'=> 'string',
+        'password'=> 'string',
         ]);
 
-          if ($validator-> fails()) {
+          if ($validator->fails()) {
          return response()->json($validator->errors(), 422);
         }
 
-        $pacientes->update($validator->validated());
-        return response()->json($pacientes); 
+        $data = $validator->validated();
+        if (isset($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        }
+        $pacientes->update($data);
+        return response()->json($pacientes);
     }
 
     public function destroy (string $id)
