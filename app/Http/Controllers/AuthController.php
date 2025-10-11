@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Pacientes;
 use App\Models\Medicos;
 use App\Models\Administrador;
+use App\Models\Resepcionistas;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -23,13 +24,14 @@ class AuthController extends Controller
         'Telefono'=> 'required|string',
         'Email' => 'required_without:email|string',
         'Fecha_nacimiento'=> 'date',
-        'Genero'=> 'string',
+        'Genero'=> 'nullable|in:M,F',
         'RH'=> 'string',
         'Nacionalidad'=> 'string',
         'password'=> 'required|string',
-        'roles'=> 'required|in:medico,paciente,administrador',
+        'roles'=> 'required|in:medico,paciente,administrador,recepcionista',
         'idConsultorio' => 'required_if:roles,medico|integer',
         'idEspecialidad' => 'required_if:roles,medico|integer',
+        'Turno' => 'required_if:roles,recepcionista|string',
 
         ]);
         if ($validator->fails()) {
@@ -38,27 +40,7 @@ class AuthController extends Controller
                 'errors' => $validator->errors(),
             ], 422);
         }
-        
-                // Crear User
-                $user = User::create([
-                    'name' => $request->Nombre,
-                    'email' => $request->Email,
-                    'password' => Hash::make($request->password),
-                    'rol' => 'paciente'
-                ]);
-
-                // Crear Pacientes
-                $pacientes = Pacientes::create($request->all());
-
-                        return response()->json([
-                'success' => true,
-                'message' => 'Registro exitoso'
-            ], 201);
-
-                 
-
-            
-        // Crear usuario en tabla users
+// Crear usuario en tabla users
         $user = User::create([
             'name' => $request->Nombre,
             'apellido' => $request->Apellido,
@@ -103,6 +85,15 @@ class AuthController extends Controller
                 'Nombre' => $request->Nombre,
                 'Apellido' => $request->Apellido,
                 'Documento' => $request->Documento,
+                'Telefono' => $request->Telefono,
+                'Email' =>  $request->Email ?? $request->email,
+                'Password' => Hash::make($request->password),
+            ]);
+        } elseif ($request->roles === 'recepcionista') {
+            Resepcionistas::create([
+                'Nombre' => $request->Nombre,
+                'Apellido' => $request->Apellido,
+                'Turno' => $request->Turno,
                 'Telefono' => $request->Telefono,
                 'Email' =>  $request->Email ?? $request->email,
                 'Password' => Hash::make($request->password),
@@ -184,9 +175,7 @@ class AuthController extends Controller
     public function me ()
     {
         try {
-            $payload = JWTAuth::parseToken()->getPayload();
-            $userId = $payload->get('sub');
-            $user = User::find($userId);
+            $user = auth()->user();
 
             if (!$user) {
                 return response()->json([
@@ -212,6 +201,11 @@ class AuthController extends Controller
                 $admin = Administrador::where('Email', $user->email)->first();
                 if ($admin) {
                     $data = array_merge($data, $admin->toArray());
+                }
+            } elseif ($rol === 'recepcionista') {
+                $recepcionista = Resepcionistas::where('Email', $user->email)->first();
+                if ($recepcionista) {
+                    $data = array_merge($data, $recepcionista->toArray());
                 }
             }
 

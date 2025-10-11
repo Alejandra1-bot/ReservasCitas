@@ -36,7 +36,7 @@ class CitasController extends Controller
                     return response()->json(['error' => 'Usuario no encontrado'], 404);
                 }
 
-                $medico = \App\Models\Medicos::where('Email', $user->Email)->first();
+                $medico = \App\Models\Medicos::where('Email', $user->email)->first();
                 if (!$medico) {
                     return response()->json(['error' => 'Médico no encontrado'], 404);
                 }
@@ -61,7 +61,7 @@ class CitasController extends Controller
         $validator = Validator::make($request->all(),[
             'Fecha_cita'     => 'required|date',
             'Hora'           => 'required|string',
-            'Estado'         => 'required|string',
+            'Estado'         => 'required|in:pendiente,Confirmada,cancelada',
             'idPaciente'     => 'required|integer|exists:pacientes,id',
             'idMedico'       => 'required|integer|exists:medicos,id',
             'idResepcionista'=> 'nullable|integer',
@@ -99,7 +99,7 @@ class CitasController extends Controller
         $validator = Validator::make($request->all(),[
             'Fecha_cita'     => 'date',
             'Hora'           => 'string',
-            'Estado'         => 'string',
+            'Estado'         => 'in:pendiente,confirmada,cancelada',
             'idPaciente'     => 'integer|exists:pacientes,id',
             'idMedico'       => 'integer|exists:medicos,id',
             'idResepcionista'=> 'nullable|integer',

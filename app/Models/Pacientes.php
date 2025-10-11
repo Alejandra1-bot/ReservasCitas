@@ -14,7 +14,7 @@ class Pacientes extends Authenticatable implements JWTSubject
     protected $table = 'pacientes';
 
     protected $fillable = [
-        'Nombre',
+        'name',
         'Apellido',
         'Documento',
         'Telefono',

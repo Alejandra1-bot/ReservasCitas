@@ -12,8 +12,8 @@ class RoleMiddleware
     {
         try {
             $user = JWTAuth::parseToken()->authenticate();
-            if (!in_array($user->role, $roles)) {
-                return response()->json(['error' => 'Acceso denegado. Rol: ' . $user->role . ', Requerido: ' . implode('|', $roles)], 403);
+            if (!in_array($user->rol, $roles)) {
+                return response()->json(['error' => 'Acceso denegado. Rol: ' . $user->rol . ', Requerido: ' . implode('|', $roles)], 403);
             }
         } catch (JWTException $e) {
             return response()->json(['error' => 'Token inválido'], 401);

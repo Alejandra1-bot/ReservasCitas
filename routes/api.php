@@ -28,7 +28,7 @@ use Illuminate\Support\Facades\DB;
     Route::group(['middleware' => 'jwt.auth'], function () {
           Route::post('logout', [AuthController::class, 'logout']);
     });
-    Route::get('me', [AuthController::class, 'me']);
+    Route::middleware('jwt.auth')->get('me', [AuthController::class, 'me']);
 
         // Route::group(['middleware'=>RoleMiddleware::class.':administrador'],function(){
             // Route::post('CrearConsultorios', [ConsultoriosController::class, 'store' ]);
@@ -49,7 +49,7 @@ use Illuminate\Support\Facades\DB;
   
 
 // Rutas para Pacientes
-Route::middleware(['jwt.auth', RoleMiddleware::class.':administrador,medico'])->group(function () {
+Route::middleware(['jwt.auth', RoleMiddleware::class.':administrador,medico,recepcionista'])->group(function () {
     Route::get('listarPacientes', [PacientesController::class, 'index' ]);
 });
 Route::middleware(['jwt.auth', RoleMiddleware::class.':administrador'])->group(function () {
@@ -66,7 +66,7 @@ Route::middleware(['jwt.auth', RoleMiddleware::class.':administrador'])->group(f
 
 
 // Rutas para consultorios
-Route::middleware(['jwt.auth', RoleMiddleware::class.':administrador,medico'])->group(function () {
+Route::middleware(['jwt.auth', RoleMiddleware::class.':administrador,medico,recepcionista'])->group(function () {
     Route::get('listarConsultorios', [ConsultoriosController::class, 'index' ]);
 });
 Route::middleware(['jwt.auth', RoleMiddleware::class.':administrador'])->group(function () {
@@ -83,7 +83,7 @@ Route::middleware(['jwt.auth', RoleMiddleware::class.':administrador'])->group(f
 
 
 // Rutas para especialidades
-Route::middleware(['jwt.auth', RoleMiddleware::class.':administrador,Medico'])->group(function () {
+Route::middleware(['jwt.auth', RoleMiddleware::class.':administrador,medico,recepcionista'])->group(function () {
     Route::get('listarEspecialidades', [EspecialidadesController::class, 'index' ]);
 });
 Route::middleware(['jwt.auth', RoleMiddleware::class.':administrador'])->group(function () {
@@ -116,7 +116,7 @@ Route::middleware(['jwt.auth', RoleMiddleware::class.':administrador'])->group(f
     Route::delete('eliminarResepcionistas/{id}', [ResepcionistasController::class, 'destroy' ]);
 
 // Rutas para medicos
-Route::middleware(['jwt.auth', RoleMiddleware::class.':administrador'])->group(function () {
+Route::middleware(['jwt.auth', RoleMiddleware::class.':administrador,recepcionista'])->group(function () {
     Route::get('listarMedicos', [MedicosController::class, 'index' ]);
     Route::post('CrearMedicos', [MedicosController::class, 'store' ]);
     Route::get('Medicos/{id}', [MedicosController::class, 'show' ]);
@@ -142,7 +142,7 @@ Route::middleware(['jwt.auth', RoleMiddleware::class.':administrador'])->group(f
 Route::middleware(['jwt.auth'])->group(function () {
     // Route::get('listarCitas', [CitasController::class, 'index' ]);
 });
-Route::middleware(['jwt.auth', RoleMiddleware::class.':administrador'])->group(function () {
+Route::middleware(['jwt.auth', RoleMiddleware::class.':administrador,recepcionista'])->group(function () {
     Route::post('CrearCitas', [CitasController::class, 'store' ]);
     Route::get('Citas/{id}', [CitasController::class, 'show' ]);
     Route::put('actualizarCitas/{id}', [CitasController::class, 'update' ]);

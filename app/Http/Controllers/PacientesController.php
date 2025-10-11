@@ -20,7 +20,7 @@ class PacientesController extends Controller
           {
 
         $validator = Validator::make($request->all(),[
-        'Nombre'=> 'required|string',
+        'name'=> 'required|string',
         'Apellido'=> 'required|string',
         'Documento'=> 'required|string',
         'Telefono'=> 'required|string',
@@ -79,7 +79,7 @@ class PacientesController extends Controller
         }
 
          $validator = Validator::make($request->all(),[
-        'Nombre'=> 'string',
+        'name'=> 'string',
         'Apellido'=> 'string',
         'Documento'=> 'string',
         'Telefono'=> 'string',

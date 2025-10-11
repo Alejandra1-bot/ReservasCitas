@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\Resepcionistas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Hash;
 
 class ResepcionistasController extends Controller
 {
@@ -30,10 +31,15 @@ class ResepcionistasController extends Controller
           return response()->json($validator->errors(), 422);
          }
 
-        $resepcionistas = Resepcionistas::create($validator->validated());
-        return response()->json($resepcionistas,201);  
+        $data = $validator->validated();
+        if (isset($data['Password'])) {
+            $data['Password'] = Hash::make($data['Password']);
+        }
 
-   } 
+        $resepcionistas = Resepcionistas::create($data);
+        return response()->json($resepcionistas,201);
+
+   }
 
    public function show(string $id)   
     {
@@ -68,7 +74,12 @@ class ResepcionistasController extends Controller
          return response()->json($validator->errors(), 422);
         }
 
-        $resepcionistas->update($validator->validated());
+        $data = $validator->validated();
+        if (isset($data['Password'])) {
+            $data['Password'] = Hash::make($data['Password']);
+        }
+
+        $resepcionistas->update($data);
         return response()->json($resepcionistas); 
     }
 
