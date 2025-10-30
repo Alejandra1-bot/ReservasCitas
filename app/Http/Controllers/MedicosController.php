@@ -42,9 +42,9 @@ class MedicosController extends Controller
          // Crear usuario en tabla users
          $user = User::create([
              'name' => $request->Nombre,
-             'apellido' => $request->Apellido,
-             'documento' => $request->Documento,
-             'telefono' => $request->Telefono,
+             'Apellido' => $request->Apellido,
+             'Documento' => $request->Documento,
+             'Telefono' => $request->Telefono,
              'email' => $request->Email,
              'fechaNacimiento' => $request->Fecha_nacimiento,
              'genero' => $request->Genero,

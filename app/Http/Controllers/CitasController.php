@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers;  
 
-use App\Models\Citas;  
-use Illuminate\Http\Request;  
-use Illuminate\Support\Facades\Validator;  
-use Tymon\JWTAuth\Facades\JWTAuth;  
+use App\Models\Citas;
+use App\Models\Pacientes;
+use App\Models\Medicos;
+use App\Models\Resepcionistas;
+use App\Mail\CitaConfirmacionMail;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Mail;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class CitasController extends Controller  
 {  
@@ -72,6 +77,36 @@ class CitasController extends Controller
         }
 
         $cita = Citas::create($validator->validated());
+
+        // Enviar email de confirmación al paciente
+        try {
+            $paciente = Pacientes::find($request->idPaciente);
+            $medico = Medicos::find($request->idMedico);
+
+            if ($paciente && $paciente->Email) {
+                $recepcionista = null;
+                if ($request->idResepcionista) {
+                    $recepcionista = Resepcionistas::find($request->idResepcionista);
+                }
+
+                $citaData = [
+                    'paciente' => $paciente->Nombre . ' ' . $paciente->Apellido,
+                    'fecha' => $request->Fecha_cita,
+                    'hora' => $request->Hora,
+                    'medico' => $medico ? $medico->Nombre . ' ' . $medico->Apellido : 'No asignado',
+                    'especialidad' => $medico && $medico->especialidad ? $medico->especialidad->Nombre : 'General',
+                    'estado' => $request->Estado,
+                    'recepcionista' => $recepcionista ? $recepcionista->Nombre . ' ' . $recepcionista->Apellido : null,
+                    'consultorio' => $medico && $medico->consultorio ? $medico->consultorio->Nombre : null,
+                ];
+
+                Mail::to($paciente->Email)->send(new CitaConfirmacionMail($citaData));
+            }
+        } catch (\Exception $e) {
+            // Log error but don't fail the cita creation
+            \Log::error('Error sending cita confirmation email: ' . $e->getMessage());
+        }
+
         return response()->json($cita, 201);
     }
 
@@ -109,7 +144,81 @@ class CitasController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
+        // Guardar valores anteriores para comparar
+        $valoresAnteriores = [
+            'Fecha_cita' => $cita->Fecha_cita,
+            'Hora' => $cita->Hora,
+            'Estado' => $cita->Estado,
+            'idMedico' => $cita->idMedico,
+            'idResepcionista' => $cita->idResepcionista,
+        ];
+
         $cita->update($validator->validated());
+
+        // Verificar si cambió algún campo importante
+        $cambioDetectado = false;
+        $tipoCambio = '';
+
+        if ($valoresAnteriores['Estado'] !== $cita->Estado) {
+            $cambioDetectado = true;
+            $tipoCambio = 'cambio_estado';
+        } elseif ($valoresAnteriores['Fecha_cita'] !== $cita->Fecha_cita ||
+                  $valoresAnteriores['Hora'] !== $cita->Hora ||
+                  $valoresAnteriores['idMedico'] !== $cita->idMedico ||
+                  $valoresAnteriores['idResepcionista'] !== $cita->idResepcionista) {
+            $cambioDetectado = true;
+            $tipoCambio = 'cambio_detalles';
+        }
+
+        // Enviar email si hubo cambios
+        if ($cambioDetectado) {
+            try {
+                $paciente = Pacientes::find($cita->idPaciente);
+                $medico = Medicos::find($cita->idMedico);
+
+                if ($paciente && $paciente->Email) {
+                    $recepcionista = null;
+                    if ($cita->idResepcionista) {
+                        $recepcionista = Resepcionistas::find($cita->idResepcionista);
+                    }
+
+                    // Obtener datos del médico anterior si cambió
+                    $medicoAnterior = null;
+                    if ($valoresAnteriores['idMedico'] !== $cita->idMedico) {
+                        $medicoAnterior = \App\Models\Medicos::find($valoresAnteriores['idMedico']);
+                    }
+    
+                    // Obtener datos del recepcionista anterior si cambió
+                    $recepcionistaAnterior = null;
+                    if ($valoresAnteriores['idResepcionista'] !== $cita->idResepcionista && $valoresAnteriores['idResepcionista']) {
+                        $recepcionistaAnterior = \App\Models\Resepcionistas::find($valoresAnteriores['idResepcionista']);
+                    }
+    
+                    $citaData = [
+                        'tipo' => $tipoCambio,
+                        'paciente' => $paciente->Nombre . ' ' . $paciente->Apellido,
+                        'fecha_anterior' => $valoresAnteriores['Fecha_cita'] !== $cita->Fecha_cita ? $valoresAnteriores['Fecha_cita'] : null,
+                        'fecha_nueva' => $cita->Fecha_cita,
+                        'hora_anterior' => $valoresAnteriores['Hora'] !== $cita->Hora ? $valoresAnteriores['Hora'] : null,
+                        'hora_nueva' => $cita->Hora,
+                        'medico_anterior' => $medicoAnterior ? $medicoAnterior->Nombre . ' ' . $medicoAnterior->Apellido : null,
+                        'medico_nuevo' => $medico ? $medico->Nombre . ' ' . $medico->Apellido : 'No asignado',
+                        'especialidad' => $medico && $medico->especialidad ? $medico->especialidad->Nombre : 'General',
+                        'estado_anterior' => $tipoCambio === 'cambio_estado' ? $valoresAnteriores['Estado'] : null,
+                        'estado_nuevo' => $tipoCambio === 'cambio_estado' ? $cita->Estado : $cita->Estado,
+                        'recepcionista_anterior' => $recepcionistaAnterior ? $recepcionistaAnterior->Nombre . ' ' . $recepcionistaAnterior->Apellido : null,
+                        'recepcionista_nuevo' => $recepcionista ? $recepcionista->Nombre . ' ' . $recepcionista->Apellido : null,
+                        'consultorio' => $medico && $medico->consultorio ? $medico->consultorio->Nombre : null,
+                    ];
+
+                    Mail::to($paciente->Email)->send(new CitaConfirmacionMail($citaData));
+                }
+            } catch (\Exception $e) {
+                // Log error but don't fail the cita update
+                \Log::error('Error sending cita status change email: ' . $e->getMessage());
+            }
+        }
+
         return response()->json($cita);
     }
 

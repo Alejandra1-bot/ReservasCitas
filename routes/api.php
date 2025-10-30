@@ -9,6 +9,7 @@ use App\Http\Controllers\MedicosController;
 use App\Http\Controllers\AdministradoresController;
 use App\Http\Controllers\CitasController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AdministradorController;
 use App\Http\Middleware\RoleMiddleware;
 
 use Illuminate\Http\Request;
@@ -24,11 +25,16 @@ use Illuminate\Support\Facades\DB;
 
     Route::post('registrar', [AuthController::class, 'registrar']);
     Route::post('login', [AuthController::class, 'login']);
+    Route::post('CrearAdministradores', [AdministradorController::class, 'store']);
 
     Route::group(['middleware' => 'jwt.auth'], function () {
           Route::post('logout', [AuthController::class, 'logout']);
     });
     Route::middleware('jwt.auth')->get('me', [AuthController::class, 'me']);
+    Route::middleware('jwt.auth')->put('updatePassword', [AuthController::class, 'updatePassword']);
+    Route::middleware('jwt.auth')->put('actualizarUsuario', [AuthController::class, 'updateUsuario']);
+    Route::post('recuperarContrasena', [AuthController::class, 'recuperarContrasena']);
+    Route::post('resetPassword', [AuthController::class, 'resetPassword']);
 
         // Route::group(['middleware'=>RoleMiddleware::class.':administrador'],function(){
             // Route::post('CrearConsultorios', [ConsultoriosController::class, 'store' ]);
@@ -118,9 +124,11 @@ Route::middleware(['jwt.auth', RoleMiddleware::class.':administrador'])->group(f
 // Rutas para medicos
 Route::middleware(['jwt.auth', RoleMiddleware::class.':administrador,recepcionista'])->group(function () {
     Route::get('listarMedicos', [MedicosController::class, 'index' ]);
-    Route::post('CrearMedicos', [MedicosController::class, 'store' ]);
     Route::get('Medicos/{id}', [MedicosController::class, 'show' ]);
-    // Route::put('actualizarMedicos/{id}', [MedicosController::class, 'update' ]);
+});
+Route::middleware(['jwt.auth', RoleMiddleware::class.':administrador'])->group(function () {
+    Route::post('CrearMedicos', [MedicosController::class, 'store' ]);
+    Route::put('actualizarMedicos/{id}', [MedicosController::class, 'update' ]);
     Route::delete('eliminarMedicos/{id}', [MedicosController::class, 'destroy' ]);
 });
     Route::put('actualizarMedicos/{id}', [MedicosController::class, 'update' ]);
@@ -128,19 +136,19 @@ Route::middleware(['jwt.auth', RoleMiddleware::class.':administrador,recepcionis
     Route::post('CrearMedicos', [MedicosController::class, 'store' ]);
     Route::get('Medicos/{id}', [MedicosController::class, 'show' ]);
 
-// Rutas para administradoreseu
-Route::middleware(['jwt.auth', RoleMiddleware::class.':administrador'])->group(function () {
-    Route::get('listarAdministradores', [AdministradoresController::class, 'index' ]);
-    Route::post('CrearAdministradores', [AdministradoresController::class, 'store' ]);
-    Route::get('Administradores/{id}', [AdministradoresController::class, 'show' ]);
-    Route::put('actualizarAdministradores/{id}', [AdministradoresController::class, 'update' ]);
-    Route::delete('eliminarAdministradores/{id}', [AdministradoresController::class, 'destroy' ]);
+// Rutas para administradores
+Route::middleware(['jwt.auth', 'roles:administrador'])->group(function () {
+    Route::get('listarAdministradores', [AdministradorController::class, 'index' ]);
+    Route::post('CrearAdministradores', [AdministradorController::class, 'store' ]);
+    Route::get('Administradores/{id}', [AdministradorController::class, 'show' ]);
+    Route::put('actualizarAdministradores/{id}', [AdministradorController::class, 'update' ]);
+    Route::delete('eliminarAdministradores/{id}', [AdministradorController::class, 'destroy' ]);
 });
 
 
 // Rutas para citas
 Route::middleware(['jwt.auth'])->group(function () {
-    // Route::get('listarCitas', [CitasController::class, 'index' ]);
+    Route::get('listarCitas', [CitasController::class, 'index' ]);
 });
 Route::middleware(['jwt.auth', RoleMiddleware::class.':administrador,recepcionista'])->group(function () {
     Route::post('CrearCitas', [CitasController::class, 'store' ]);
